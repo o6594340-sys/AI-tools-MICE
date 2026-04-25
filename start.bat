@@ -26,6 +26,9 @@ pip install -r requirements.txt -q
 echo  Готово.
 echo.
 
+:: Загрузить переменные из .env
+for /f "usebackq tokens=1,* delims==" %%a in (".env") do set "%%a=%%b"
+
 :: Запустить приложение
 echo  Запускаю сервер...
 echo  Браузер откроется автоматически.
