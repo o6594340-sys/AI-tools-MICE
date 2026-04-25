@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MICE Draft — AI-инструменты для MICE-менеджера</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<header>
+  <div class="logo">MICE Draft</div>
+  <div class="tagline">AI-инструменты для MICE-менеджера</div>
+</header>
+
+<main>
+  <!-- Tabs -->
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-mode="brief">Анализ брифа</button>
+    <button class="tab" data-mode="objection">Возражение</button>
+    <button class="tab" data-mode="supplier">Поставщик</button>
+    <button class="tab" data-mode="dmc">Редактор DMC</button>
+    <button class="tab" data-mode="followup">Follow-up</button>
+    <button class="tab" data-mode="concept">Концепция</button>
+  </div>
+
+  <div class="workspace">
+
+    <!-- ── INPUT PANEL ── -->
+    <div class="input-panel">
+
+      <!-- MODE 1: Анализ брифа -->
+      <div class="mode-form active" id="form-brief">
+        <div class="form-header">
+          <h2>Анализ брифа клиента</h2>
+          <p>Вставьте запрос клиента — получите резюме, уточняющие вопросы и черновик ответа.</p>
+        </div>
+        <div class="form-group">
+          <label>Текст брифа / запрос клиента</label>
+          <textarea id="brief-text" placeholder="Вставьте письмо или сообщение клиента..." rows="8"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Язык ответа</label>
+          <select id="brief-language">
+            <option value="русский">Русский</option>
+            <option value="английский">English</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- MODE 2: Возражение -->
+      <div class="mode-form" id="form-objection">
+        <div class="form-header">
+          <h2>Ответ на возражение</h2>
+          <p>Вставьте возражение клиента — получите профессиональный ответ без давления.</p>
+        </div>
+        <div class="form-group">
+          <label>Текст возражения</label>
+          <textarea id="objection-text" placeholder="Вставьте текст возражения клиента..." rows="5"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Тип возражения</label>
+          <div class="chip-group" id="objection-type-group">
+            <label class="chip"><input type="radio" name="obj-type" value="определить автоматически" checked /><span>Определить автоматически</span></label>
+            <label class="chip"><input type="radio" name="obj-type" value="дорого" /><span>Дорого</span></label>
+            <label class="chip"><input type="radio" name="obj-type" value="подумаем" /><span>Подумаем</span></label>
+            <label class="chip"><input type="radio" name="obj-type" value="нашли дешевле" /><span>Нашли дешевле</span></label>
+            <label class="chip"><input type="radio" name="obj-type" value="не тот формат" /><span>Не тот формат</span></label>
+            <label class="chip"><input type="radio" name="obj-type" value="долго" /><span>Долго</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Контекст (необязательно)</label>
+          <textarea id="objection-context" placeholder="Направление, дополнительный контекст..." rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Язык ответа</label>
+          <select id="objection-language">
+            <option value="русский">Русский</option>
+            <option value="английский">English</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- MODE 3: Поставщик -->
+      <div class="mode-form" id="form-supplier">
+        <div class="form-header">
+          <h2>Письмо поставщику</h2>
+          <p>Опишите ситуацию — получите письмо на русском и английском.</p>
+        </div>
+        <div class="form-group">
+          <label>Текст от поставщика или описание ситуации</label>
+          <textarea id="supplier-context" placeholder="Вставьте текст от поставщика или опишите ситуацию..." rows="5"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Цель письма</label>
+          <div class="chip-group">
+            <label class="chip checkbox-chip"><input type="checkbox" name="supplier-goal" value="запросить скидку" /><span>Запросить скидку</span></label>
+            <label class="chip checkbox-chip"><input type="checkbox" name="supplier-goal" value="hold без оплаты" /><span>Hold без оплаты</span></label>
+            <label class="chip checkbox-chip"><input type="checkbox" name="supplier-goal" value="подтвердить бронирование" /><span>Подтвердить бронь</span></label>
+            <label class="chip checkbox-chip"><input type="checkbox" name="supplier-goal" value="уточнить условия" /><span>Уточнить условия</span></label>
+            <label class="chip checkbox-chip" id="other-goal-chip"><input type="checkbox" name="supplier-goal" value="other" id="other-goal-cb" /><span>Другое</span></label>
+          </div>
+          <div class="form-group" id="custom-goal-group" style="display:none; margin-top:10px; margin-bottom:0;">
+            <input type="text" id="custom-goal" placeholder="Опишите цель письма..." class="text-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Тон письма</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="supplier-tone" value="дружелюбный" checked /><span>Дружелюбный</span></label>
+            <label class="chip"><input type="radio" name="supplier-tone" value="нейтральный деловой" /><span>Деловой</span></label>
+            <label class="chip"><input type="radio" name="supplier-tone" value="формальный" /><span>Формальный</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 4: Редактор DMC -->
+      <div class="mode-form" id="form-dmc">
+        <div class="form-header">
+          <h2>Редактор текста DMC</h2>
+          <p>Вставьте сырой текст от DMC — получите живое профессиональное описание для КП.</p>
+        </div>
+        <div class="form-group">
+          <label>Текст от DMC</label>
+          <textarea id="dmc-text" placeholder="Вставьте текст программы, описание отеля, маршрут..." rows="10"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Стиль текста</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="dmc-tone" value="сдержанный профессиональный" checked /><span>Сдержанный</span></label>
+            <label class="chip"><input type="radio" name="dmc-tone" value="вдохновляющий живой" /><span>Вдохновляющий</span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODE 5: Follow-up -->
+      <div class="mode-form" id="form-followup">
+        <div class="form-header">
+          <h2>Follow-up клиенту</h2>
+          <p>Клиент молчит после предложения — получите короткое письмо без давления.</p>
+        </div>
+        <div class="form-group">
+          <label>Что было предложено (необязательно)</label>
+          <textarea id="followup-proposal" placeholder="Например: инсентив в Японию на 5 дней, 40 человек, отели 5*..." rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Дней без ответа</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="followup-days" value="1–3" checked /><span>1–3 дня</span></label>
+            <label class="chip"><input type="radio" name="followup-days" value="4–7" /><span>4–7 дней</span></label>
+            <label class="chip"><input type="radio" name="followup-days" value="7+" /><span>7+ дней</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Тон письма</label>
+          <div class="chip-group">
+            <label class="chip"><input type="radio" name="followup-tone" value="тёплый" checked /><span>Тёплый</span></label>
+            <label class="chip"><input type="radio" name="followup-tone" value="деловой" /><span>Деловой</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Язык письма</label>
+          <select id="followup-language">
+            <option value="русский">Русский</option>
+            <option value="английский">English</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- MODE 6: Концепция -->
+      <div class="mode-form" id="form-concept">
+        <div class="form-header">
+          <h2>Генератор концепции</h2>
+          <p>Опишите бриф — получите сильную концепцию с названием и логикой для КП.</p>
+        </div>
+        <div class="form-group">
+          <label>Бриф</label>
+          <textarea id="concept-brief" placeholder="Направление, тип мероприятия, количество участников, профиль компании, пожелания..." rows="6"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Программа от DMC (необязательно)</label>
+          <textarea id="concept-dmc" placeholder="Вставьте программу DMC, если хотите концепцию под неё..." rows="5"></textarea>
+        </div>
+      </div>
+
+      <!-- Generate button -->
+      <button class="btn-generate" id="btn-generate">Сгенерировать →</button>
+    </div>
+
+    <!-- ── OUTPUT PANEL ── -->
+    <div class="output-panel">
+      <div class="output-placeholder" id="output-placeholder">
+        <div class="placeholder-icon">✦</div>
+        <p>Результат появится здесь</p>
+        <span>Заполните форму и нажмите «Сгенерировать»</span>
+      </div>
+
+      <div class="output-content" id="output-content" style="display:none">
+        <div class="output-text" id="output-text"></div>
+        <div class="output-actions">
+          <button class="btn-copy" id="btn-copy">Копировать текст</button>
+          <button class="btn-again" id="btn-again">Ещё раз</button>
+        </div>
+      </div>
+
+      <div class="output-loading" id="output-loading" style="display:none">
+        <div class="spinner"></div>
+        <p>Генерирую...</p>
+      </div>
+
+      <div class="output-error" id="output-error" style="display:none"></div>
+    </div>
+
+  </div><!-- /workspace -->
+</main>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
