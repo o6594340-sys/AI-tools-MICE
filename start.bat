@@ -37,7 +37,7 @@ echo  Для остановки — закрой это окно или нажм
 echo.
 
 timeout /t 2 /nobreak > nul
-start "" http://localhost:5000
+start "" http://localhost:8080
 python app.py
 
 pause

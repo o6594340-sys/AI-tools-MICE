@@ -1,9 +1,10 @@
+import io
 import json
 import os
 
 from anthropic import Anthropic
 from dotenv import load_dotenv
-from flask import Flask, Response, render_template, request, stream_with_context
+from flask import Flask, Response, jsonify, render_template, request, stream_with_context
 
 import prompts as p
 
@@ -48,6 +49,11 @@ def build_user_message(mode, data):
         tone = data.get("tone", "сдержанный профессиональный")
         return f"Текст от DMC:\n\n{data.get('dmc_text', '')}\n\nТон вывода: {tone}"
 
+    if mode == "dmc_refine":
+        style = data.get("style", "более продающе")
+        style_instruction = p.DMC_STYLE_MAP.get(style, "")
+        return f"ИНСТРУКЦИЯ ПО СТИЛЮ:\n{style_instruction}\n\nТЕКСТ ДЛЯ ПЕРЕРАБОТКИ:\n{data.get('current_text', '')}"
+
     if mode == "followup":
         proposal = data.get("proposal", "").strip() or "не указано"
         days = data.get("days", "4–7")
@@ -78,9 +84,92 @@ PROMPT_MAP = {
     "objection": p.OBJECTION_PROMPT,
     "supplier": p.SUPPLIER_PROMPT,
     "dmc": p.DMC_PROMPT,
+    "dmc_refine": p.DMC_REFINE_PROMPT,
     "followup": p.FOLLOWUP_PROMPT,
     "concept": p.CONCEPT_PROMPT,
 }
+
+
+def _extract_pdf(content):
+    from pypdf import PdfReader
+    reader = PdfReader(io.BytesIO(content))
+    parts = [page.extract_text() for page in reader.pages if page.extract_text()]
+    return "\n\n".join(parts)
+
+
+def _extract_docx(content):
+    from docx import Document
+    doc = Document(io.BytesIO(content))
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def _extract_xlsx(content):
+    from openpyxl import load_workbook
+    wb = load_workbook(io.BytesIO(content), data_only=True)
+    parts = []
+    for sheet in wb.worksheets:
+        rows = []
+        for row in sheet.iter_rows(values_only=True):
+            cells = [str(c) for c in row if c is not None]
+            if cells:
+                rows.append("\t".join(cells))
+        if rows:
+            parts.append(f"[{sheet.title}]\n" + "\n".join(rows))
+    return "\n\n".join(parts)
+
+
+def _extract_pptx(content):
+    from pptx import Presentation
+    prs = Presentation(io.BytesIO(content))
+    slides = []
+    for i, slide in enumerate(prs.slides, 1):
+        texts = []
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                for para in shape.text_frame.paragraphs:
+                    line = " ".join(run.text for run in para.runs if run.text.strip())
+                    if line.strip():
+                        texts.append(line)
+        if texts:
+            slides.append(f"[Слайд {i}]\n" + "\n".join(texts))
+    return "\n\n".join(slides)
+
+
+@app.route("/parse-file", methods=["POST"])
+def parse_file():
+    if "file" not in request.files:
+        return jsonify({"error": "Файл не найден"}), 400
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "Файл не выбран"}), 400
+
+    filename = file.filename.lower()
+    content = file.read()
+
+    try:
+        if filename.endswith(".pdf"):
+            text = _extract_pdf(content)
+        elif filename.endswith(".docx"):
+            text = _extract_docx(content)
+        elif filename.endswith(".xlsx"):
+            text = _extract_xlsx(content)
+        elif filename.endswith(".pptx"):
+            text = _extract_pptx(content)
+        elif filename.endswith(".xls"):
+            return jsonify({"error": "Формат .xls не поддерживается. Сохраните файл как .xlsx (Excel 2007+)."}), 400
+        elif filename.endswith(".doc"):
+            return jsonify({"error": "Формат .doc не поддерживается. Сохраните файл как .docx."}), 400
+        elif filename.endswith(".ppt"):
+            return jsonify({"error": "Формат .ppt не поддерживается. Сохраните файл как .pptx (PowerPoint 2007+)."}), 400
+        else:
+            return jsonify({"error": "Неподдерживаемый формат. Используйте PDF, Word (.docx), Excel (.xlsx) или PowerPoint (.pptx)."}), 400
+
+        if not text.strip():
+            return jsonify({"error": "Не удалось извлечь текст из файла. Возможно, файл содержит только изображения."}), 400
+
+        return jsonify({"text": text})
+    except Exception as e:
+        return jsonify({"error": f"Ошибка при чтении файла: {str(e)}"}), 500
 
 
 @app.route("/")
@@ -124,4 +213,4 @@ def generate():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, port=8080)

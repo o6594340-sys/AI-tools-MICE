@@ -7,7 +7,9 @@ let rawOutput = '';
 document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   initOtherGoal();
-  document.getElementById('btn-generate').addEventListener('click', generate);
+  initFileUpload();
+  initRefineButtons();
+  document.getElementById('btn-generate').addEventListener('click', () => generate());
   document.getElementById('btn-copy').addEventListener('click', copyText);
   document.getElementById('btn-again').addEventListener('click', () => generate(true));
 });
@@ -26,6 +28,73 @@ function initTabs() {
   });
 }
 
+/* ── File upload (universal) ── */
+function initFileUpload() {
+  setupFileZone('file-drop-zone', 'brief-file', 'file-drop-content', 'file-status', 'brief-text');
+  setupFileZone('dmc-file-drop-zone', 'dmc-file', 'dmc-file-drop-content', 'dmc-file-status', 'dmc-text');
+}
+
+function setupFileZone(zoneId, inputId, contentId, statusId, targetId) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  if (!zone || !input) return;
+
+  zone.addEventListener('click', (e) => {
+    if (e.target.closest('.file-clear')) return;
+    input.click();
+  });
+  input.addEventListener('change', () => {
+    if (input.files[0]) handleFile(input.files[0], contentId, statusId, targetId, inputId);
+  });
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0], contentId, statusId, targetId, inputId);
+  });
+}
+
+async function handleFile(file, contentId, statusId, targetId, inputId) {
+  const status = document.getElementById(statusId);
+  const content = document.getElementById(contentId);
+
+  status.className = 'file-status loading';
+  status.textContent = `Читаю ${file.name}…`;
+  content.style.display = 'none';
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/parse-file', { method: 'POST', body: formData });
+    const data = await res.json();
+
+    if (data.error) {
+      status.className = 'file-status error';
+      status.textContent = data.error;
+      content.style.display = 'flex';
+      return;
+    }
+
+    document.getElementById(targetId).value = data.text;
+    status.className = 'file-status success';
+    status.innerHTML = `<span>&#10003; ${file.name}</span><button class="file-clear" title="Очистить">&#10005;</button>`;
+    status.querySelector('.file-clear').addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById(targetId).value = '';
+      document.getElementById(inputId).value = '';
+      status.className = 'file-status';
+      status.textContent = '';
+      content.style.display = 'flex';
+    });
+  } catch (_) {
+    status.className = 'file-status error';
+    status.textContent = 'Ошибка при загрузке файла';
+    content.style.display = 'flex';
+  }
+}
+
 /* ── "Other" goal checkbox in supplier mode ── */
 function initOtherGoal() {
   const cb = document.getElementById('other-goal-cb');
@@ -37,9 +106,18 @@ function initOtherGoal() {
   }
 }
 
+/* ── Always read mode from active tab in the DOM ── */
+function getActiveMode() {
+  const activeTab = document.querySelector('.tab.active');
+  if (activeTab) currentMode = activeTab.dataset.mode;
+  return currentMode;
+}
+
 /* ── Collect form data per mode ── */
 function collectData() {
-  if (currentMode === 'brief') {
+  const mode = getActiveMode();
+
+  if (mode === 'brief') {
     return {
       mode: 'brief',
       brief_text: val('brief-text'),
@@ -47,7 +125,7 @@ function collectData() {
     };
   }
 
-  if (currentMode === 'objection') {
+  if (mode === 'objection') {
     return {
       mode: 'objection',
       objection_text: val('objection-text'),
@@ -57,7 +135,7 @@ function collectData() {
     };
   }
 
-  if (currentMode === 'supplier') {
+  if (mode === 'supplier') {
     const goals = [...document.querySelectorAll('input[name="supplier-goal"]:checked')]
       .map(cb => cb.value)
       .filter(v => v !== 'other');
@@ -70,7 +148,7 @@ function collectData() {
     };
   }
 
-  if (currentMode === 'dmc') {
+  if (mode === 'dmc') {
     return {
       mode: 'dmc',
       dmc_text: val('dmc-text'),
@@ -78,7 +156,7 @@ function collectData() {
     };
   }
 
-  if (currentMode === 'followup') {
+  if (mode === 'followup') {
     return {
       mode: 'followup',
       proposal: val('followup-proposal'),
@@ -88,7 +166,7 @@ function collectData() {
     };
   }
 
-  if (currentMode === 'concept') {
+  if (mode === 'concept') {
     return {
       mode: 'concept',
       brief: val('concept-brief'),
@@ -96,7 +174,7 @@ function collectData() {
     };
   }
 
-  return { mode: currentMode };
+  return { mode };
 }
 
 /* ── Validate required fields ── */
@@ -188,6 +266,67 @@ async function generate(isRetry = false) {
   }
 }
 
+/* ── DMC refine buttons ── */
+function initRefineButtons() {
+  document.querySelectorAll('.btn-refine').forEach(btn => {
+    btn.addEventListener('click', () => refineText(btn.dataset.style));
+  });
+}
+
+async function refineText(style) {
+  const currentText = document.getElementById('output-text').innerText;
+  if (!currentText.trim()) return;
+
+  const data = { mode: 'dmc_refine', current_text: currentText, style };
+  lastPayload = null;
+  rawOutput = '';
+
+  showLoading();
+  document.getElementById('btn-generate').disabled = true;
+
+  try {
+    const response = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    showOutputPanel();
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const outputEl = document.getElementById('output-text');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value, { stream: true }).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') break;
+        try {
+          const parsed = JSON.parse(payload);
+          if (parsed.error) { showError(parsed.error); return; }
+          if (parsed.chunk) {
+            rawOutput += parsed.chunk;
+            outputEl.textContent = rawOutput;
+          }
+        } catch (_) {}
+      }
+    }
+
+    document.getElementById('output-text').innerHTML = marked.parse(rawOutput);
+    showOutputActions();
+    showRefineSection();
+  } catch (err) {
+    showError('Ошибка соединения: ' + err.message);
+  } finally {
+    document.getElementById('btn-generate').disabled = false;
+  }
+}
+
 /* ── Copy plain text ── */
 function copyText() {
   const text = document.getElementById('output-text').innerText;
@@ -221,6 +360,12 @@ function showOutputPanel() {
 function showOutputActions() {
   const actions = document.querySelector('.output-actions');
   if (actions) actions.style.display = 'flex';
+  if (getActiveMode() === 'dmc') showRefineSection();
+}
+
+function showRefineSection() {
+  const el = document.getElementById('refine-section');
+  if (el) el.style.display = 'block';
 }
 
 function showError(msg) {
@@ -236,6 +381,7 @@ function resetOutput() {
   hide('output-content');
   hide('output-loading');
   hide('output-error');
+  hide('refine-section');
   show('output-placeholder');
   rawOutput = '';
 }

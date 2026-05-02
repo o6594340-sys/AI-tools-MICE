@@ -39,8 +39,20 @@
           <p>Вставьте запрос клиента — получите резюме, уточняющие вопросы и черновик ответа.</p>
         </div>
         <div class="form-group">
-          <label>Текст брифа / запрос клиента</label>
-          <textarea id="brief-text" placeholder="Вставьте письмо или сообщение клиента..." rows="8"></textarea>
+          <label>Прикрепить файл брифа</label>
+          <div class="file-drop-zone" id="file-drop-zone">
+            <input type="file" id="brief-file" accept=".pdf,.docx,.xlsx" hidden />
+            <div class="file-drop-content" id="file-drop-content">
+              <svg class="file-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16v-8m0 0-3 3m3-3 3 3M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>
+              <span class="file-drop-text">Перетащите файл или <span class="file-drop-link">выберите</span></span>
+              <span class="file-drop-hint">PDF, Word (.docx), Excel (.xlsx)</span>
+            </div>
+            <div class="file-status" id="file-status"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Или вставьте текст вручную</label>
+          <textarea id="brief-text" placeholder="Вставьте письмо или сообщение клиента..." rows="6"></textarea>
         </div>
         <div class="form-group">
           <label>Язык ответа</label>
@@ -122,11 +134,23 @@
       <div class="mode-form" id="form-dmc">
         <div class="form-header">
           <h2>Редактор текста DMC</h2>
-          <p>Вставьте сырой текст от DMC — получите живое профессиональное описание для КП.</p>
+          <p>Загрузите презентацию или вставьте текст от DMC — получите живое профессиональное описание для КП.</p>
         </div>
         <div class="form-group">
-          <label>Текст от DMC</label>
-          <textarea id="dmc-text" placeholder="Вставьте текст программы, описание отеля, маршрут..." rows="10"></textarea>
+          <label>Прикрепить презентацию или файл DMC</label>
+          <div class="file-drop-zone" id="dmc-file-drop-zone">
+            <input type="file" id="dmc-file" accept=".pdf,.docx,.pptx" hidden />
+            <div class="file-drop-content" id="dmc-file-drop-content">
+              <svg class="file-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16v-8m0 0-3 3m3-3 3 3M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/></svg>
+              <span class="file-drop-text">Перетащите файл или <span class="file-drop-link">выберите</span></span>
+              <span class="file-drop-hint">PowerPoint (.pptx), PDF, Word (.docx)</span>
+            </div>
+            <div class="file-status" id="dmc-file-status"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Или вставьте текст вручную</label>
+          <textarea id="dmc-text" placeholder="Вставьте текст программы, описание отеля, маршрут..." rows="8"></textarea>
         </div>
         <div class="form-group">
           <label>Стиль текста</label>
@@ -205,6 +229,16 @@
           <button class="btn-copy" id="btn-copy">Копировать текст</button>
           <button class="btn-again" id="btn-again">Ещё раз</button>
         </div>
+        <div class="refine-section" id="refine-section" style="display:none">
+          <span class="refine-label">Переписать в стиле:</span>
+          <div class="refine-chips">
+            <button class="btn-refine" data-style="более продающе">Продающе</button>
+            <button class="btn-refine" data-style="более подробно">Подробнее</button>
+            <button class="btn-refine" data-style="более ярко">Ярче</button>
+            <button class="btn-refine" data-style="более дерзко">Дерзче</button>
+            <button class="btn-refine" data-style="более интеллигентно">Интеллигентно</button>
+          </div>
+        </div>
       </div>
 
       <div class="output-loading" id="output-loading" style="display:none">
@@ -218,6 +252,6 @@
   </div><!-- /workspace -->
 </main>
 
-<script src="/static/script.js"></script>
+<script src="/static/script.js?v=8"></script>
 </body>
 </html>

@@ -381,6 +381,132 @@ select {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── DMC REFINE BUTTONS ── */
+.refine-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.refine-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 8px;
+}
+
+.refine-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.btn-refine {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+
+.btn-refine:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.btn-refine:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── FILE UPLOAD ZONE ── */
+.file-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+  background: #fafbfc;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.file-drop-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-icon-svg {
+  width: 24px;
+  height: 24px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.file-drop-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.file-drop-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+.file-drop-hint {
+  font-size: 11px;
+  color: var(--border);
+}
+
+.file-status {
+  font-size: 13px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.file-status.loading { color: var(--muted); }
+.file-status.success { color: var(--success); font-weight: 500; }
+.file-status.error   { color: var(--error-text); }
+
+.file-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.file-clear:hover { color: var(--error-text); }
+
 /* ── ERROR ── */
 .output-error {
   background: var(--error-bg);
